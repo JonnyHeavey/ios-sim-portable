@@ -4,12 +4,14 @@
 import childProcess = require("./child-process");
 import errors = require("./errors");
 
+import common = require("./iphone-simulator-common");
 import options = require("./options");
 import path = require("path");
 import { Simctl } from "./simctl";
 import util = require("util");
 import utils = require("./utils");
 import xcode = require("./xcode");
+
 var $ = require("NodObjC");
 var osenv = require("osenv");
 
@@ -97,6 +99,30 @@ export class XCode7Simulator implements ISimulator {
 
 	public getApplicationPath(deviceId: string, applicationIdentifier: string): IFuture<string> {
 		return this.simctl.getAppContainer(deviceId, applicationIdentifier);
+	}
+
+	public getInstalledApplications(deviceId: string): IFuture<IApplication[]> {
+		return common.getInstalledApplications(deviceId);
+	}
+
+	public installApplication(deviceId: string, applicationPath: string): IFuture<void> {
+		return this.simctl.install(deviceId, applicationPath);
+	}
+
+	public uninstallApplication(deviceId: string, appIdentifier: string): IFuture<void> {
+		return this.simctl.uninstall(deviceId, appIdentifier, {skipError: true});
+	}
+
+	public startApplication(deviceId: string, appIdentifier: string): IFuture<string> {
+		return this.simctl.launch(deviceId, appIdentifier);
+	}
+
+	public stopApplication(deviceId: string, appIdentifier: string): IFuture<string> {
+		try {
+			return childProcess.exec(`killall ${appIdentifier.split(".")[2]}`, {skipError: true});
+		} catch(e) {
+			//this.$logger.trace("Unable to kill simulator: " + e);
+		}
 	}
 
 	private getDeviceToRun(): IFuture<IDevice> {
